@@ -148,7 +148,13 @@ fn main() {
 
     let compiler = cc::Build::new().get_compiler();
     info!("CC={:?}", compiler.path());
-
+    let cflags = compiler
+        .args()
+        .iter()
+        .map(|s| s.to_str().unwrap())
+        .collect::<Vec<_>>()
+        .join(" ");
+    info!("CFLAGS={}", cflags);
     assert!(out_dir.exists(), "OUT_DIR does not exist");
     let jemalloc_repo_dir = PathBuf::from("jemalloc");
     info!("JEMALLOC_REPO_DIR={:?}", jemalloc_repo_dir);
@@ -182,6 +188,9 @@ fn main() {
     )
     .current_dir(&build_dir)
     .env("CC", compiler.path())
+    .env("CFLAGS", cflags.clone())
+    .env("LDFLAGS", cflags.clone())
+    .env("CPPFLAGS", cflags.clone())
     .arg(format!("--with-version={je_version}"))
     .arg("--disable-cxx")
     .arg("--enable-doc=no")
@@ -293,6 +302,9 @@ fn main() {
     let make = make_cmd(&host);
     run(Command::new(make)
         .current_dir(&build_dir)
+        .env("CFLAGS", cflags.clone())
+        .env("LDFLAGS", cflags.clone())
+        .env("CPPFLAGS", cflags.clone())
         .arg("-j")
         .arg(num_jobs.clone()));
 
@@ -313,6 +325,9 @@ fn main() {
     // Make install:
     run(Command::new(make)
         .current_dir(&build_dir)
+        .env("CFLAGS", cflags.clone())
+        .env("LDFLAGS", cflags.clone())
+        .env("CPPFLAGS", cflags.clone())
         .arg("install_lib_static")
         .arg("install_include")
         .arg("-j")
